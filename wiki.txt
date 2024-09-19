@@ -1,0 +1,73 @@
+! By default, texture channels in your templates which do not have a suffix and a dds option defined in this DDS exporter will be converted to BC7_UNORM. !
+
+Example of suffixes and associated dds option =>
+N BC5_UNORM
+NA BC7_UNORM
+
+DDS OPTIONS =>
+
+BC1_UNORM (Block Compression 1 - Unsigned Normalized)
+Type: 4:1 compression ratio (8 bits per pixel).
+Channels: RGB with optional 1-bit alpha.
+Use Case: Commonly used for opaque textures or textures with simple binary transparency.
+Details: Low-quality alpha channel if used (1-bit), but great for RGB data due to its high compression ratio.
+
+BC2_UNORM (Block Compression 2 - Unsigned Normalized)
+Type: 4:1 compression ratio.
+Channels: RGB with explicit 4-bit alpha.
+Use Case: Used when you need RGB with a low-quality alpha channel.
+Details: Provides better alpha representation than BC1 due to the 4-bit alpha, but it has higher storage requirements.
+
+BC3_UNORM (Block Compression 3 - Unsigned Normalized)
+Type: 4:1 compression ratio.
+Channels: RGB with 8-bit alpha.
+Use Case: Best for textures with full alpha channels.
+Details: The most common format for textures with transparency, with better alpha quality than BC1 or BC2.
+
+BC4_UNORM (Block Compression 4 - Unsigned Normalized)
+Type: 4:1 compression ratio.
+Channels: Single channel (grayscale).
+Use Case: Height maps, alpha maps, or grayscale images.
+Details: A great choice when only a single channel is needed, providing high compression without sacrificing much quality.
+
+BC5_UNORM (Block Compression 5 - Unsigned Normalized)
+Type: 2:1 compression ratio.
+Channels: Two channels (typically used for normal maps).
+Use Case: Frequently used for normal maps or data requiring two high-quality channels.
+Details: Provides high-quality compression for data like normal vectors without an alpha channel.
+
+BC6H_UF16 (Block Compression 6 - High Dynamic Range)
+Type: Compressed floating-point data.
+Channels: RGB (no alpha).
+Use Case: For HDR (high dynamic range) textures.
+Details: Used for storing textures with high dynamic ranges, such as lighting or environment maps, that require floating-point precision.
+
+BC7_UNORM (Block Compression 7 - Unsigned Normalized)
+Type: High-quality compression.
+Channels: RGB with optional alpha.
+Use Case: Best for high-quality color textures, with or without alpha.
+Details: Offers higher-quality compression than BC1, BC2, or BC3. Often used when maximum texture quality is required.
+
+R8G8B8A8_UNORM (8-bit per Channel - Unsigned Normalized)
+Type: 8 bits per channel (32 bits total).
+Channels: Red, Green, Blue, Alpha.
+Use Case: High-quality uncompressed textures with full color and alpha.
+Details: Provides a good balance of quality and performance for textures that don't require compression.
+
+R16G16B16A16_UNORM (16-bit per Channel - Unsigned Normalized)
+Type: 16 bits per channel (64 bits total).
+Channels: Red, Green, Blue, Alpha.
+Use Case: For textures requiring high precision in color data, where the values are normalized between 0.0 and 1.0.
+Details: Useful for high-quality textures or when greater color depth is needed compared to R8G8B8A8.
+
+R16G16B16A16_FLOAT (16-bit per Channel - Floating Point)
+Type: 16 bits per channel, but with floating-point precision.
+Channels: Red, Green, Blue, Alpha.
+Use Case: HDR content or data requiring more dynamic range than UNORM formats.
+Details: This floating-point format provides better precision and range, which is important for physically-based rendering (PBR) or HDR lighting effects.
+
+R32G32B32A32_FLOAT (32-bit per Channel - Floating Point)
+Type: 32 bits per channel (128 bits total), floating-point precision.
+Channels: Red, Green, Blue, Alpha.
+Use Case: Extremely high-precision textures, often used in scientific simulations or high-end rendering.
+Details: Provides the most precision possible for textures. Used for data that needs a very wide range and extremely fine precision.
