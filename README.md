@@ -28,7 +28,7 @@ You might have to delete the DDS files if you want to re-export as it might not 
 
 * Remove button to remove the last added suffix + safety checks to prevent duplicate suffixes and such.
 
-* User defined suffixes, state of checkboxes is now stored in the ini config files so it will remember your selection and defined suffixes and dds options.
+* User defined suffixes, state of checkboxes are now stored in the ini config files so your selections, defined suffixes and dds options will be remembered.
 
 * Added a Show/Hide log button.
 
