@@ -22,12 +22,21 @@ You might have to delete the DDS files if you want to re-export as it might not 
 
 **Changes made:**
 
-* State of checkboxes is now stored in the ini config files so it will remember your selection.
-* Added a Show/Hide log button
+* Instead of the suffixes and dds options being defined in the py script, these are now defined by you, the user, simply click the add button each time you want to define a new suffix and a dds option for that suffix and define them in the input and dropdown menu.
+
+* DDS Options available are: BC1_UNORM, BC2_UNORM, BC3_UNORM, BC4_UNORM, BC5_UNORM, BC6H_UF16, BC7_UNORM, R8G8B8A8_UNORM, R16G16B16A16_UNORM, R16G16B16A16_FLOAT, R32G32B32A32_FLOAT.
+
+* Remove button to remove the last added suffix + safety checks to prevent duplicate suffixes and such.
+
+* User defined suffixes, state of checkboxes is now stored in the ini config files so it will remember your selection and defined suffixes and dds options.
+
+* Added a Show/Hide log button.
+
 * Added a "Export Textures" button so you no longer have to drag the mouse to the top left and select File => Export textures or press Ctrl+Shift+E.
+
 * Added a built-in wiki which will display info regarding the available dds options and some other info, it also has a Show/Hide button.
-* Instead of the suffixes and dds options being defined in the py script, these are now defined by you, the user, simply click the add button each time you want to define a new suffix and a dds option for that suffix and define them in the input and dropdown menu. There is also a remove button to remove the last added suffix, it also has safety checks to prevent duplicate suffixes and such.
-* User defined suffixes are stored in the ini config file so you won't have to re-define them everytime.
+
+* By default, texture channels in your templates which do not have a suffix and a dds option defined in this DDS exporter will be converted to BC7_UNORM.
 
 # Installation:
 
