@@ -1,11 +1,22 @@
 __author__ = "Emil Eldstål"
 __copyright__ = "Copyright 2023, Emil Eldstål"
 __version__ = "0.1.1"
-__forkedVersion__ = "1.0.0"
+__forkedVersion__ = "1.0.2"
+__painterVersion__ = "10.1.0"
 
-from PySide2 import QtWidgets
-from PySide2.QtCore import Qt
-from PySide2.QtGui import QKeyEvent
+# Qt5 vs Qt6 check import
+# Painter version 10.1 moved from Qt5 to Qt6, which introduces breaking changes in Python plugins. The most notable change in the PySide module going from version 2 to 6.
+import substance_painter as sp
+IsQt5 = sp.application.version_info() < (10,1,0)
+
+if IsQt5 :
+    from PySide2 import QtWidgets
+    from PySide2.QtCore import Qt
+    from PySide2.QtGui import QKeyEvent
+else :
+    from PySide6 import QtWidgets
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QKeyEvent
 
 import substance_painter.ui
 import substance_painter.event
