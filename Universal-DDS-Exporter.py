@@ -412,12 +412,12 @@ class UniversalDDSPlugin:
 
     # Handle export DDS files checkbox change
     def checkbox_export_change(self, state):
-        self.export = state == Qt.Checked
+        self.export = state == Qt.Checked.value
         self.save_config()
 
     # Handle overwrite DDS files checkbox change
     def checkbox_overwrite_change(self, state):
-        self.overwrite = state == Qt.Checked
+        self.overwrite = state == Qt.Checked.value
         self.save_config()
 
     # Save the current plugin configuration to the ini file
