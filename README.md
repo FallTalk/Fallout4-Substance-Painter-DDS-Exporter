@@ -23,6 +23,8 @@ You might have to delete the DDS files if you want to re-export as it might not 
 **Changes made:**
 
 * Instead of the suffixes and dds options being defined in the py script, these are now defined by you, the user, simply click the add button each time you want to define a new suffix and a dds option for that suffix and define them in the input and dropdown menu.
+  
+* Profiling system so you can have dedicated suffix-formats for different games or projects.
 
 * DDS Options available are: BC1_UNORM, BC2_UNORM, BC3_UNORM, BC4_UNORM, BC5_UNORM, BC6H_UF16, BC7_UNORM, R8G8B8A8_UNORM, R16G16B16A16_UNORM, R16G16B16A16_FLOAT, R32G32B32A32_FLOAT.
 
@@ -63,7 +65,7 @@ This will create a Universal-DDS-Exporter-PluginSettings.ini in the plugin folde
 
 First time running the plugin it will ask you what folder the Texconv.exe is located in via a UI pop-up. This will create a Universal-DDS-Exporter-PluginSettings.ini in the plugin folder with the settings saved.
 
-![plugin widget](https://staticdelivery.nexusmods.com/mods/4187/images/4891/4891-1696725603-1907132508.png)
+![plugin widget](https://staticdelivery.nexusmods.com/mods/2295/images/1044/1044-1736010967-599790474.png)
 Dockable widget with output terminal and basic settings
 
 # Dependencies:
