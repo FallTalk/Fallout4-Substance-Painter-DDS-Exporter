@@ -4,7 +4,7 @@ Example of suffixes and associated dds option =>
 N BC5_UNORM
 NA BC7_UNORM
 
-DDS OPTIONS =>
+DDS compression OPTIONS =>
 
 BC1_UNORM (Block Compression 1 - Unsigned Normalized)
 Type: 4:1 compression ratio (8 bits per pixel).
@@ -12,11 +12,23 @@ Channels: RGB with optional 1-bit alpha.
 Use Case: Commonly used for opaque textures or textures with simple binary transparency.
 Details: Low-quality alpha channel if used (1-bit), but great for RGB data due to its high compression ratio.
 
+BC1_UNORM_SRGB (Block Compression 1 - Unsigned Normalized with sRGB)
+Type: 4:1 compression ratio (8 bits per pixel).
+Channels: RGB with optional 1-bit alpha.
+Use Case: Opaque textures or simple binary transparency with gamma correction.
+Details: Same as BC1_UNORM but with sRGB gamma correction for more accurate color reproduction.
+
 BC2_UNORM (Block Compression 2 - Unsigned Normalized)
 Type: 4:1 compression ratio.
 Channels: RGB with explicit 4-bit alpha.
 Use Case: Used when you need RGB with a low-quality alpha channel.
 Details: Provides better alpha representation than BC1 due to the 4-bit alpha, but it has higher storage requirements.
+
+BC2_UNORM_SRGB (Block Compression 2 - Unsigned Normalized with sRGB)
+Type: 4:1 compression ratio.
+Channels: RGB with explicit 4-bit alpha.
+Use Case: Textures with RGB and low-quality alpha channel that require gamma correction.
+Details: Provides better alpha representation with sRGB gamma correction for more visually accurate results.
 
 BC3_UNORM (Block Compression 3 - Unsigned Normalized)
 Type: 4:1 compression ratio.
@@ -24,11 +36,24 @@ Channels: RGB with 8-bit alpha.
 Use Case: Best for textures with full alpha channels.
 Details: The most common format for textures with transparency, with better alpha quality than BC1 or BC2.
 
+BC3_UNORM_SRGB (Block Compression 3 - Unsigned Normalized with sRGB)
+Type: 4:1 compression ratio.
+Channels: RGB with 8-bit alpha.
+Use Case: Transparent textures requiring gamma correction for accurate color representation.
+Details: Most common format for transparency with full alpha channel and sRGB gamma correction.
+
 BC4_UNORM (Block Compression 4 - Unsigned Normalized)
 Type: 4:1 compression ratio.
 Channels: Single channel (grayscale).
 Use Case: Height maps, alpha maps, or grayscale images.
 Details: A great choice when only a single channel is needed, providing high compression without sacrificing much quality.
+
+BC4_SNORM (Block Compression 4 - Signed Normalized)
+Type: 4:1 compression ratio (8 bits per pixel).
+Channels: Single channel (grayscale) with signed values.
+Use Case: Signed grayscale data, such as normal maps or data requiring negative values.
+Details: Similar to BC4_UNORM but allows for signed normalized values, enabling representation of data with both positive and negative values.
+This is essential for certain types of normal maps and other data textures where directionality is important.
 
 BC5_UNORM (Block Compression 5 - Unsigned Normalized)
 Type: 2:1 compression ratio.
@@ -36,11 +61,24 @@ Channels: Two channels (typically used for normal maps).
 Use Case: Frequently used for normal maps or data requiring two high-quality channels.
 Details: Provides high-quality compression for data like normal vectors without an alpha channel.
 
+BC5_SNORM (Block Compression 5 - Signed Normalized)
+Type: 4:1 compression ratio (8 bits per pixel per channel; 2 channels).
+Channels: Two channels (typically used for normal maps) with signed normalized values.
+Use Case: Normal maps or other data requiring two signed channels.
+Details: Extends BC5_UNORM by allowing both channels to store signed normalized values, facilitating accurate representation of vectors that can have negative components. Ideal for high-quality normal mapping in 3D rendering.
+
 BC6H_UF16 (Block Compression 6 - High Dynamic Range)
 Type: Compressed floating-point data.
 Channels: RGB (no alpha).
 Use Case: For HDR (high dynamic range) textures.
 Details: Used for storing textures with high dynamic ranges, such as lighting or environment maps, that require floating-point precision.
+
+BC6H_SF16 (Block Compression 6 - Signed Float 16)
+Type: Compressed floating-point data.
+Channels: RGB (no alpha), floating-point.
+Use Case: High dynamic range textures that require signed floating-point precision.
+Details: Designed for HDR textures that need signed floating-point data, providing a balance between compression and maintaining the precision required for physically accurate rendering.
+Suitable for lighting or environment maps with a wide dynamic range.
 
 BC7_UNORM (Block Compression 7 - Unsigned Normalized)
 Type: High-quality compression.
@@ -48,11 +86,108 @@ Channels: RGB with optional alpha.
 Use Case: Best for high-quality color textures, with or without alpha.
 Details: Offers higher-quality compression than BC1, BC2, or BC3. Often used when maximum texture quality is required.
 
+BC7_UNORM_SRGB (Block Compression 7 - Unsigned Normalized with sRGB)
+Type: High-quality compression.
+Channels: RGB with optional alpha.
+Use Case: High-quality color textures requiring sRGB gamma correction.
+Details: Provides better quality than BC1/BC2/BC3 for color data, suitable for modern rendering pipelines.
+
+R8_SNORM (8-bit Grayscale - Signed Normalized)
+Type: 8 bits per channel.
+Channels: Single channel (Red), signed normalized.
+Use Case: Grayscale images or masks requiring signed values.
+Details: Provides a compact way to store single-channel signed data, suitable for simple signed masks or grayscale data with possible negative values. Efficient for scenarios where memory usage is critical and signed data is necessary.
+
+A8_UNORM (8-bit Alpha - Unsigned Normalized)
+Type: 8 bits for Alpha channel.
+Channels: Alpha.
+Use Case: Single-channel alpha masks or opacity maps.
+Details: Efficiently stores alpha information, allowing for varying levels of transparency with minimal memory usage. Ideal for UI elements, decals, or any textures where only transparency information is needed.
+
+R8_UNORM (8-bit Grayscale - Unsigned Normalized)
+Type: 8 bits per channel.
+Channels: Single channel (Red).
+Use Case: Grayscale images, heightmaps, or masks.
+Details: Provides an efficient way to store single-channel data, saving memory compared to multi-channel formats.
+
+R8G8_UNORM (8-bit per Channel - Unsigned Normalized)
+Type: 8 bits per channel (16 bits total).
+Channels: Red, Green.
+Use Case: Two-channel color data or data maps with moderate precision requirements.
+Details: Offers a compact two-channel format, suitable for applications where two channels are needed without high precision, such as certain types of masks or simple data maps.
+
+R8G8_SNORM (8-bit per Channel - Signed Normalized)
+Type: 8 bits per channel (16 bits total), signed normalized.
+Channels: Red, Green.
+Use Case: Two-channel data requiring signed values, such as certain vector or normal maps.
+Details: Allows for signed two-channel data with efficient memory usage, suitable for applications needing two signed channels without the high precision of larger formats.
+
 R8G8B8A8_UNORM (8-bit per Channel - Unsigned Normalized)
 Type: 8 bits per channel (32 bits total).
 Channels: Red, Green, Blue, Alpha.
 Use Case: High-quality uncompressed textures with full color and alpha.
 Details: Provides a good balance of quality and performance for textures that don't require compression.
+
+R8G8B8A8_UNORM_SRGB (8-bit per Channel - Unsigned Normalized with sRGB)
+Type: 8 bits per channel (32 bits total).
+Channels: Red, Green, Blue, Alpha.
+Use Case: Textures requiring gamma correction for sRGB color space.
+Details: Suitable for 2D art, UI textures, or assets displayed in gamma-corrected pipelines.
+
+R8G8B8A8_SNORM (8-bit RGBA - Signed Normalized)
+Type: 8 bits per channel.
+Channels: Red, Green, Blue, Alpha (RGBA).
+Use Case: Color images with signed normalized values, normal maps, or images requiring signed color data.
+Details: ideal for normal maps or images where color data needs to represent both positive and negative values, offering more precise control over color gradients and depth information compared to unsigned formats.
+It also allows for efficient storage of RGBA data in a single texture, optimizing memory usage in cases where negative values are necessary.
+
+R10G10B10A2_UNORM (10-bit per Channel + 2-bit Alpha - Unsigned Normalized)
+Type: 10 bits for R, G, B channels and 2 bits for Alpha (32 bits total).
+Channels: Red, Green, Blue, Alpha.
+Use Case: Color textures where slightly lower precision for color channels is acceptable but small alpha is needed.
+Details: Balances color precision with compact alpha storage, suitable for applications where memory is a concern but both color and alpha channels are required. Often used in mobile graphics and real-time applications.
+
+R11G11B10_FLOAT (11-bit R, 11-bit G, 10-bit B - Floating Point)
+Type: Floating-point format with 11 bits for Red and Green, and 10 bits for Blue (32 bits total).
+Channels: Red, Green, Blue.
+Use Case: HDR color textures requiring floating-point precision with reduced memory usage.
+Details: Provides higher precision for color channels compared to 8-bit formats while using floating-point representation to capture a wide dynamic range. Ideal for high-fidelity color representation in graphics applications.
+
+R16_FLOAT (16-bit per Channel - Floating Point)
+Type: 16 bits per channel (16 bits total), floating-point precision.
+Channels: Red.
+Use Case: Single-channel floating-point data requiring higher precision than 8-bit formats.
+Details: Provides better precision and range than normalized formats for single-channel data, useful for detailed heightmaps, scientific data, or any application requiring precise single-channel information.
+
+R16_UNORM (16-bit per Channel - Unsigned Normalized)
+Type: 16 bits per channel (16 bits total), unsigned normalized.
+Channels: Red.
+Use Case: Single-channel color or data maps needing higher precision than 8-bit formats.
+Details: Efficiently stores single-channel data with higher precision, suitable for heightmaps, masks, or other single-channel textures where more detail is required.
+
+R16_SNORM (16-bit per Channel - Signed Normalized)
+Type: 16 bits per channel (16 bits total), signed normalized.
+Channels: Red.
+Use Case: Single-channel data requiring signed values, such as certain types of heightmaps or scientific data.
+Details: Allows for signed single-channel data with higher precision, useful for applications needing both positive and negative single-channel data without the need for additional color channels.
+
+R16G16_FLOAT (16-bit per Channel - Floating Point)
+Type: 16 bits per channel (32 bits total), floating-point precision.
+Channels: Red, Green.
+Use Case: Two-channel floating-point data, such as certain types of data maps or vector fields.
+Details: Offers high precision and a wide dynamic range for applications needing two-component floating-point data without an alpha channel. Common in advanced rendering and simulation tasks.
+
+R16G16_UNORM (16-bit per Channel - Unsigned Normalized)
+Type: 16 bits per channel (32 bits total), unsigned normalized.
+Channels: Red, Green.
+Use Case: Two-channel color data or data maps requiring higher precision than 8-bit formats.
+Details: Provides more precise color or data representation than lower-bit formats, suitable for applications needing two channels with high precision, such as light maps or displacement maps.
+
+R16G16_SNORM (16-bit per Channel - Signed Normalized)
+Type: 16 bits per channel (32 bits total), signed normalized.
+Channels: Red, Green.
+Use Case: Two-channel data maps requiring signed values, such as certain normal or vector maps.
+Details: Allows for signed two-channel data with high precision, offering greater flexibility for representing complex data that includes both positive and negative values.
 
 R16G16B16A16_UNORM (16-bit per Channel - Unsigned Normalized)
 Type: 16 bits per channel (64 bits total).
@@ -60,14 +195,157 @@ Channels: Red, Green, Blue, Alpha.
 Use Case: For textures requiring high precision in color data, where the values are normalized between 0.0 and 1.0.
 Details: Useful for high-quality textures or when greater color depth is needed compared to R8G8B8A8.
 
+R16G16B16A16_SNORM (16-bit per Channel - Signed Normalized)
+Type: 16 bits per channel (64 bits total), signed normalized.
+Channels: Red, Green, Blue, Alpha.
+Use Case: High-precision color data with signed values, useful in specific scientific or rendering applications.
+Details: Allows for negative and positive values with high precision, enabling accurate representation of complex color data. Ideal for applications that require both high color fidelity and the ability to represent signed data.
+
+R16G16B16_FLOAT (16-bit per Channel - Floating Point)
+Type: 16 bits per channel (48 bits total), floating-point precision.
+Channels: Red, Green, Blue.
+Use Case: Mid-precision color data for HDR textures or data requiring more dynamic range than UNORM formats.
+Details: Provides a good balance between precision and memory usage, suitable for HDR content or other scenarios where floating-point color data is beneficial without the high memory cost of 32-bit floats.
+
 R16G16B16A16_FLOAT (16-bit per Channel - Floating Point)
 Type: 16 bits per channel, but with floating-point precision.
 Channels: Red, Green, Blue, Alpha.
 Use Case: HDR content or data requiring more dynamic range than UNORM formats.
 Details: This floating-point format provides better precision and range, which is important for physically-based rendering (PBR) or HDR lighting effects.
 
+R32_FLOAT (32-bit per Channel - Floating Point)
+Type: 32 bits per channel (32 bits total), floating-point precision.
+Channels: Red.
+Use Case: Single-channel floating-point data, such as height maps or scientific data requiring high precision.
+Details: Provides maximum precision for single-channel data, suitable for applications needing detailed single-channel information without the need for additional color channels.
+
+R32G32_FLOAT (32-bit per Channel - Floating Point)
+Type: 32 bits per channel (64 bits total), floating-point precision.
+Channels: Red, Green.
+Use Case: Data requiring two high-precision floating-point channels, such as certain types of data maps or vector fields.
+Details: Offers high precision and a wide dynamic range for applications needing two-component floating-point data. Commonly used in scientific computations and advanced rendering techniques.
+
+R32G32B32_FLOAT (32-bit per Channel - Floating Point)
+Type: 32 bits per channel (96 bits total), floating-point precision.
+Channels: Red, Green, Blue.
+Use Case: High-precision color data without alpha, used in scientific visualization or high-end rendering where alpha is not required.
+Details: Offers high precision with a wide dynamic range, suitable for applications needing detailed color information without the overhead of an alpha channel.
+Commonly used in scenarios where exact color representation is critical.
+
 R32G32B32A32_FLOAT (32-bit per Channel - Floating Point)
 Type: 32 bits per channel (128 bits total), floating-point precision.
 Channels: Red, Green, Blue, Alpha.
 Use Case: Extremely high-precision textures, often used in scientific simulations or high-end rendering.
 Details: Provides the most precision possible for textures. Used for data that needs a very wide range and extremely fine precision.
+
+B8G8R8A8_UNORM (8-bit per Channel - Unsigned Normalized)
+Type: 8 bits per channel (32 bits total).
+Channels: Blue, Green, Red, Alpha.
+Use Case: High-quality uncompressed textures, commonly used for API compatibility.
+Details: Similar to R8G8B8A8_UNORM but with a different channel order, often required for older systems or specific pipelines.
+
+R8G8_B8G8_UNORM (Interleaved Channels)
+Type: 8 bits per component, interleaved.
+Channels: Red, Green, Blue, Green.
+Use Case: Specific use cases where channels are interleaved in a particular pattern, possibly for certain hardware optimizations.
+Details: Stores channels in an interleaved format (Red, Green, Blue, Green), which may be required for compatibility with specific APIs or hardware. Useful in scenarios where channel ordering needs to match hardware or software expectations.
+
+G8R8_G8B8_UNORM (Interleaved Channels)
+Type: 8 bits per component, interleaved.
+Channels: Green, Red, Green, Blue.
+Use Case: Specific use cases requiring a particular interleaved channel order.
+Details: Stores channels in an interleaved pattern (Green, Red, Green, Blue), which can be necessary for compatibility with certain systems or optimization scenarios. Ensures that the texture data aligns with expected channel ordering in specific pipelines.
+
+B5G6R5_UNORM (16-bit - Unsigned Normalized)
+Type: 16 bits total (5 bits Blue, 6 bits Green, 5 bits Red).
+Channels: Blue, Green, Red.
+Use Case: High-performance scenarios where memory is limited, such as older mobile devices or legacy systems.
+Details: Compact 16-bit format with 5 bits for Blue and Red and 6 bits for Green, offering a balance between color precision and memory usage. Commonly used in older graphics APIs and hardware where memory bandwidth and storage are critical constraints.
+
+B5G5R5A1_UNORM (16-bit - Unsigned Normalized)
+Type: 16 bits total (5 bits Blue, 5 bits Green, 5 bits Red, 1 bit Alpha).
+Channels: Blue, Green, Red, Alpha.
+Use Case: Textures needing a small alpha channel alongside RGB data.
+Details: Offers a compact 16-bit format with 5 bits each for Blue, Green, and Red, and 1 bit for Alpha. Suitable for scenarios where a minimal alpha channel is required without significant memory overhead, such as simple UI elements or icons.
+
+B8G8R8X8_UNORM (32-bit - Unsigned Normalized)
+Type: 8 bits per channel (32 bits total).
+Channels: Blue, Green, Red, Unused (X).
+Use Case: High-quality uncompressed textures without alpha, often used for compatibility with certain APIs or older hardware.
+Details: Similar to B8G8R8A8_UNORM but with the alpha channel replaced by an unused 'X' channel. Useful when alpha is not needed but compatibility with specific APIs or hardware is required, ensuring that the texture data aligns with expected channel layouts.
+
+B8G8R8A8_UNORM_SRGB (32-bit - Unsigned Normalized with sRGB)
+Type: 8 bits per channel (32 bits total).
+Channels: Blue, Green, Red, Alpha.
+Use Case: Textures requiring gamma correction with an alpha channel.
+Details: Similar to B8G8R8A8_UNORM but with sRGB gamma correction applied to the color channels, ensuring accurate color reproduction in gamma-corrected rendering pipelines. Ideal for textures used in environments where color accuracy and gamma correction are critical.
+
+B8G8R8X8_UNORM_SRGB (32-bit - Unsigned Normalized with sRGB)
+Type: 8 bits per channel (32 bits total).
+Channels: Blue, Green, Red, Unused (X).
+Use Case: Textures requiring sRGB gamma correction without alpha.
+Details: Applies sRGB gamma correction to the color channels while keeping the fourth channel unused. Suitable for scenarios needing gamma-corrected colors without transparency, ensuring compatibility and accurate color representation in gamma-corrected pipelines.
+
+B4G4R4A4_UNORM (16-bit - Unsigned Normalized)
+Type: 16 bits total (4 bits Blue, 4 bits Green, 4 bits Red, 4 bits Alpha).
+Channels: Blue, Green, Red, Alpha.
+Use Case: Very low-memory scenarios where a small alpha channel is needed alongside RGB data.
+Details: Provides a highly compact 16-bit format with 4 bits per channel, suitable for simple textures or UI elements where high color precision is not critical. Useful in memory-constrained environments where minimizing texture size is essential.
+
+A4B4G4R4_UNORM (16-bit - Unsigned Normalized)
+Type: 16 bits total (4 bits Alpha, 4 bits Blue, 4 bits Green, 4 bits Red).
+Channels: Alpha, Blue, Green, Red.
+Use Case: Low-memory textures with a small alpha channel, with channels ordered differently for specific pipeline or hardware requirements.
+Details: Similar to B4G4R4A4_UNORM but with the alpha channel first. Useful for compatibility with specific APIs or hardware that expect this channel order, ensuring that texture data aligns correctly with rendering expectations.
+
+BC3n (Block Compression 3 - Variant)
+Type: 4:1 compression ratio.
+Channels: RGB with 8-bit alpha or another variation depending on context.
+Use Case: Similar to BC3_UNORM but may include specific optimizations or modifications for particular use cases.
+Details: BC3n is not a standard format and may refer to a variant of BC3 compression tailored for specific workflows or requirements. It could include optimizations for certain types of textures or compatibility with specific tools. For exact details, refer to the documentation of the tool or context in which BC3n is used.
+
+
+__________
+
+Recommended compressions for starfield:
+
+BC1_UNORM_SRGB or BC7_UNORM_SRGB: _color / _emissive
+BC4_UNORM: _ao / _metal / _rough / _transmissive / _opacity / _height / _mask
+BC5_SNORM: _normal
+
+Faces/Chargen :
+R8G8B8A8_UNORM_SRGB: _color
+R8_UNORM: _ao / _rough / _mask
+R8G8B8A8_SNORM: _normal
+
+Effects/Gradients: B8G8R8A8_UNORM
+Effects/Luts (Non-HDR): R8G8B8A8_UNORM
+Effects/Luts (HDR): BC6H_UF16
+Interface/Skillpatches and Interface/Inventoryicons: BC3_UNORM
+Interface/Loadscreens and Interface/Photomode: BC7_UNORM  (Linear, not SRGB)
+
+__________
+
+Recommended compressions for skyrim:
+
+Diffuse :
+BC1_UNORM / BC1_UNORM_SRGB
+BC3_UNORM / BC3_UNORM_SRGB
+Use BC1 for opaque, BC3 for transparency
+
+Normal Maps :
+BC5_UNORM / BC5_SNORM
+Preferred for two-channel normal data
+
+Specular Maps :
+BC1_UNORM / BC1_UNORM_SRGB
+BC3_UNORM / BC3_UNORM_SRGB
+Use BC1 without alpha, BC3 with alpha
+
+UI/HUD Textures
+BC1_UNORM / BC1_UNORM_SRGB
+BC3_UNORM / BC3_UNORM_SRGB
+Use BC3 for transparent UI elements
+
+High-Quality
+BC7_UNORM / BC7_UNORM_SRGB
