@@ -201,16 +201,20 @@ def convert_png_to_dds(texconvPath, sourcePNG, overwrite, suffix_format_map):
     return ""
 
 # Custom Qt Logging Handler
-class QtLogHandler(logging.Handler, QObject):
-    log_signal = Signal(str)
+class QtLogHandler(QObject, logging.Handler):
+    log_message = Signal(str)  # Renamed signal to avoid conflicts
 
     def __init__(self):
-        logging.Handler.__init__(self)
-        QObject.__init__(self)
+        super().__init__()
+        logging.Handler.__init__(self)  # Explicitly initialize logging.Handler
+        self.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 
     def emit(self, record):
-        msg = self.format(record)
-        self.log_signal.emit(msg)
+        try:
+            msg = self.format(record)
+            self.log_message.emit(msg)
+        except Exception as e:
+            print(f"Logging emit error: {e}")
 
 # Main plugin class
 class UniversalDDSPlugin(QObject):
@@ -359,8 +363,7 @@ class UniversalDDSPlugin(QObject):
 
         # Create and add the custom Qt handler
         qt_handler = QtLogHandler()
-        qt_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-        qt_handler.log_signal.connect(self.log.append)
+        qt_handler.log_message.connect(self.log.append)  # Connect renamed signal
         logger.addHandler(qt_handler)
 
         # Set the logging level
