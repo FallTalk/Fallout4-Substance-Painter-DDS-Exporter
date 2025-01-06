@@ -1,7 +1,7 @@
 __author__ = "Emil Eldstål"
 __copyright__ = "Copyright 2023, Emil Eldstål"
 __version__ = "0.1.1"
-__forkedVersion__ = "1.0.4"
+__forkedVersion__ = "1.0.5"
 __painterVersion__ = "10.1.2"
 
 # Qt5 vs Qt6 check import
