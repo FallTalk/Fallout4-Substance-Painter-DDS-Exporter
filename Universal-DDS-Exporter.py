@@ -170,6 +170,8 @@ class Config:
         self.show_log = True
         self.show_wiki = False
         self.suffix_format_map = {}
+        self.level_presets = {}  # Dictionary to store level presets
+
 
 # Function to load and update settings from the ini configuration file
 def config_ini(prompt_texconv_path, profile_name=None):
@@ -284,6 +286,25 @@ def config_ini(prompt_texconv_path, profile_name=None):
     config_obj.show_log = config.getboolean('General', 'ShowLog', fallback=True)
     config_obj.show_wiki = config.getboolean('General', 'ShowWiki', fallback=False)
 
+    # Load level presets
+    if 'LevelPresets' in config:
+        for key, value in config.items('LevelPresets'):
+            try:
+                # Parse the preset values (format: red_min,red_max,red_gamma,green_black,green_white,green_gamma)
+                values = value.split(',')
+                if len(values) == 6:
+                    preset_values = {
+                        'red_min': int(values[0]),
+                        'red_max': int(values[1]),
+                        'red_gamma': float(values[2]),
+                        'green_black': int(values[3]),
+                        'green_white': int(values[4]),
+                        'green_gamma': float(values[5])
+                    }
+                    config_obj.level_presets[key] = preset_values
+            except (ValueError, IndexError):
+                logger.warning(f"Invalid level preset format for '{key}': {value}")
+
     # Handle profiles if profile_name is provided
     config_obj.suffix_format_map = {}
     if profile_name:
@@ -304,6 +325,24 @@ def config_ini(prompt_texconv_path, profile_name=None):
             with open(ini_file_path, 'w') as configfile:
                 config.write(configfile)
 
+    # If no suffixes are found, add Fallout 4 defaults
+    if not config_obj.suffix_format_map:
+        config_obj.suffix_format_map = {
+            "S": "BC5_UNORM",
+            "D": "BC7_UNORM",
+            "N": "BC5_UNORM"
+        }
+
+        # Save these defaults to the config file if profile name is provided
+        if profile_name:
+            suffix_section = f"{profile_name}_SuffixFormats"
+            if suffix_section not in config:
+                config[suffix_section] = {}
+            for suffix, format_option in config_obj.suffix_format_map.items():
+                config[suffix_section][suffix] = format_option
+            with open(ini_file_path, 'w') as configfile:
+                config.write(configfile)
+
     return config_obj
 
 
@@ -311,7 +350,7 @@ def config_ini(prompt_texconv_path, profile_name=None):
 def convert_png_to_dds(config, sourcePNG, suffix_format_map=None):
     """
     Convert PNG or TGA files to DDS format using TexConv
-    
+
     Parameters:
     -----------
     config : Config
@@ -323,7 +362,7 @@ def convert_png_to_dds(config, sourcePNG, suffix_format_map=None):
     """
     # Use passed suffix_format_map or config's map
     suffix_map = suffix_format_map if suffix_format_map is not None else config.suffix_format_map
-    
+
     if not config.texconv_path or not os.path.exists(config.texconv_path):
         log.error("Invalid TexConv path.")
         return "Invalid TexConv path."
@@ -408,10 +447,10 @@ def convert_png_to_dds(config, sourcePNG, suffix_format_map=None):
             # Run TexConv command in the background without showing a command window
             try:
                 # CREATE_NO_WINDOW flag (0x08000000) prevents command window from appearing
-                subprocess.Popen(texconv_cmd, shell=False, 
-                               creationflags=0x08000000, 
-                               stdout=subprocess.PIPE, 
-                               stderr=subprocess.PIPE)
+                subprocess.Popen(texconv_cmd, shell=False,
+                                 creationflags=0x08000000,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
                 log.info(f"Started conversion of {filename} to {outputFile} using {format_option}")
                 return f"Started conversion of {filename} to {outputFile} with format {format_option}"
             except Exception as e:
@@ -492,7 +531,7 @@ class UniversalDDSPlugin(QObject):
         self.checkbox_overwrite = QtWidgets.QCheckBox("Overwrite DDS files")
         self.checkbox_overwrite.setChecked(self.config.overwrite_dds)
         # Create Fallout 4 Adjustments checkbox
-        self.checkbox_adjust_red = QtWidgets.QCheckBox("Fallout 4 Adjustments")
+        self.checkbox_adjust_red = QtWidgets.QCheckBox("Fallout 4 Spec Adjustments")
         self.checkbox_adjust_red.setToolTip("Apply Red clamp and Green levels (Photoshop Levels)")
         self.checkbox_adjust_red.setChecked(self.config.adjust_red)
         self.button_texconv = QtWidgets.QPushButton("Texconv location")
@@ -554,70 +593,80 @@ class UniversalDDSPlugin(QObject):
         output_dir_layout.addWidget(self.button_browse_dir)
 
         # Create adjustments controls (without the checkbox which is now in checkbox_group)
+        
+        # Level Presets Section
+        self.level_presets_label = QtWidgets.QLabel("Level Presets:")
+        self.level_presets_dropdown = QtWidgets.QComboBox()
+        self.level_presets_dropdown.setToolTip("Select a level preset")
+        self.button_save_preset = QtWidgets.QPushButton("Save Preset")
+        self.button_save_preset.setToolTip("Save current levels as a new preset")
+        self.button_delete_preset = QtWidgets.QPushButton("Delete Preset")
+        self.button_delete_preset.setToolTip("Delete selected preset")
+        
         # Add min/max value controls for Red
         self.red_min_label = QtWidgets.QLabel("Red Min:")
-        self.red_min_slider = QtWidgets.QSlider(Qt.Horizontal)
-        self.red_min_slider.setRange(0, 254)
-        self.red_min_slider.setValue(self.config.red_min)
-        self.red_min_value = QtWidgets.QLabel(str(self.config.red_min))
+        self.red_min_spinbox = QtWidgets.QSpinBox()
+        self.red_min_spinbox.setRange(0, 254)
+        self.red_min_spinbox.setValue(self.config.red_min)
 
         self.red_max_label = QtWidgets.QLabel("Red Max:")
-        self.red_max_slider = QtWidgets.QSlider(Qt.Horizontal)
-        self.red_max_slider.setRange(1, 255)
-        self.red_max_slider.setValue(self.config.red_max)
-        self.red_max_value = QtWidgets.QLabel(str(self.config.red_max))
+        self.red_max_spinbox = QtWidgets.QSpinBox()
+        self.red_max_spinbox.setRange(1, 255)
+        self.red_max_spinbox.setValue(self.config.red_max)
 
-        # Red gamma slider (0.10 to 3.00 mapped via integer slider 10-300)
+        # Red gamma slider (0.10 to 3.00)
         self.red_gamma_label = QtWidgets.QLabel("Red Gamma:")
-        self.red_gamma_slider = QtWidgets.QSlider(Qt.Horizontal)
-        self.red_gamma_slider.setRange(10, 300)
-        self.red_gamma_slider.setValue(int(round(self.config.red_gamma * 100)))
-        self.red_gamma_value = QtWidgets.QLabel(f"{self.config.red_gamma:.2f}")
+        self.red_gamma_spinbox = QtWidgets.QDoubleSpinBox()
+        self.red_gamma_spinbox.setRange(0.10, 3.00)
+        self.red_gamma_spinbox.setSingleStep(0.01)
+        self.red_gamma_spinbox.setValue(self.config.red_gamma)
 
         # Green levels sliders
         self.green_black_label = QtWidgets.QLabel("Green Black:")
-        self.green_black_slider = QtWidgets.QSlider(Qt.Horizontal)
-        self.green_black_slider.setRange(0, 254)
-        self.green_black_slider.setValue(self.config.green_black)
-        self.green_black_value = QtWidgets.QLabel(str(self.config.green_black))
+        self.green_black_spinbox = QtWidgets.QSpinBox()
+        self.green_black_spinbox.setRange(0, 254)
+        self.green_black_spinbox.setValue(self.config.green_black)
 
         self.green_white_label = QtWidgets.QLabel("Green White:")
-        self.green_white_slider = QtWidgets.QSlider(Qt.Horizontal)
-        self.green_white_slider.setRange(1, 255)
-        self.green_white_slider.setValue(self.config.green_white)
-        self.green_white_value = QtWidgets.QLabel(str(self.config.green_white))
+        self.green_white_spinbox = QtWidgets.QSpinBox()
+        self.green_white_spinbox.setRange(1, 255)
+        self.green_white_spinbox.setValue(self.config.green_white)
 
-        # Green gamma slider (0.10 to 3.00 via 10-300)
+        # Green gamma slider (0.10 to 3.00)
         self.green_gamma_label = QtWidgets.QLabel("Green Gamma:")
-        self.green_gamma_slider = QtWidgets.QSlider(Qt.Horizontal)
-        self.green_gamma_slider.setRange(10, 300)
-        self.green_gamma_slider.setValue(int(round(self.config.green_gamma * 100)))
-        self.green_gamma_value = QtWidgets.QLabel(f"{self.config.green_gamma:.2f}")
-        self.green_gamma_value_note = QtWidgets.QLabel("(PS Levels midtone)")
+        self.green_gamma_spinbox = QtWidgets.QDoubleSpinBox()
+        self.green_gamma_spinbox.setRange(0.10, 3.00)
+        self.green_gamma_spinbox.setSingleStep(0.01)
+        self.green_gamma_spinbox.setValue(self.config.green_gamma)
 
-        # Create function to add a row of label+slider+value
-        def add_row(parent_layout, label_widget, slider_widget, value_widget=None):
+        # Create function to add a row of label+spinbox
+        def add_row(parent_layout, label_widget, spinbox_widget):
             row = QtWidgets.QHBoxLayout()
             row.addWidget(label_widget)
-            row.addWidget(slider_widget)
-            if value_widget is not None:
-                row.addWidget(value_widget)
+            row.addWidget(spinbox_widget)
             parent_layout.addLayout(row)
 
+        # Create Level Presets section layout
+        level_presets_layout = QtWidgets.QHBoxLayout()
+        level_presets_layout.addWidget(self.level_presets_label)
+        level_presets_layout.addWidget(self.level_presets_dropdown)
+        level_presets_layout.addWidget(self.button_save_preset)
+        level_presets_layout.addWidget(self.button_delete_preset)
+        
         # Create Red Levels section
         red_levels_layout = QtWidgets.QVBoxLayout()
-        add_row(red_levels_layout, self.red_min_label, self.red_min_slider, self.red_min_value)
-        add_row(red_levels_layout, self.red_max_label, self.red_max_slider, self.red_max_value)
-        add_row(red_levels_layout, self.red_gamma_label, self.red_gamma_slider, self.red_gamma_value)
+        red_levels_layout.addLayout(level_presets_layout)  # Add presets at the top
+        add_row(red_levels_layout, self.red_min_label, self.red_min_spinbox)
+        add_row(red_levels_layout, self.red_max_label, self.red_max_spinbox)
+        add_row(red_levels_layout, self.red_gamma_label, self.red_gamma_spinbox)
 
         # Create Green Levels section
         green_levels_layout = QtWidgets.QVBoxLayout()
-        add_row(green_levels_layout, self.green_black_label, self.green_black_slider, self.green_black_value)
-        add_row(green_levels_layout, self.green_white_label, self.green_white_slider, self.green_white_value)
-        add_row(green_levels_layout, self.green_gamma_label, self.green_gamma_slider, self.green_gamma_value)
+        add_row(green_levels_layout, self.green_black_label, self.green_black_spinbox)
+        add_row(green_levels_layout, self.green_white_label, self.green_white_spinbox)
+        add_row(green_levels_layout, self.green_gamma_label, self.green_gamma_spinbox)
         note_row = QtWidgets.QHBoxLayout()
         note_row.addStretch(1)
-        note_row.addWidget(self.green_gamma_value_note)
         green_levels_layout.addLayout(note_row)
 
         # Create group boxes for both red and green levels
@@ -690,8 +739,10 @@ class UniversalDDSPlugin(QObject):
         self.checkbox.stateChanged.connect(self.checkbox_export_change)
         self.checkbox_overwrite.stateChanged.connect(self.checkbox_overwrite_change)
         self.checkbox_adjust_red.stateChanged.connect(self.checkbox_adjust_red_change)
-        self.red_max_slider.valueChanged.connect(self.red_max_slider_change)
-        self.red_min_slider.valueChanged.connect(self.red_min_slider_change)
+        self.red_max_spinbox.valueChanged.connect(self.red_max_changed)
+        self.red_min_spinbox.valueChanged.connect(self.red_min_changed)
+        self.red_max_spinbox.editingFinished.connect(self.red_max_changed)
+        self.red_min_spinbox.editingFinished.connect(self.red_min_changed)
         self.button_texconv.clicked.connect(self.button_texconv_clicked)
         self.button_clear.clicked.connect(self.button_clear_clicked)
         self.button_display_log.clicked.connect(self.toggle_log_display)
@@ -703,10 +754,19 @@ class UniversalDDSPlugin(QObject):
         self.button_remove.clicked.connect(self.remove_last_suffix_format_row)
         self.button_browse_dir.clicked.connect(self.browse_output_directory)
         self.output_dir_edit.editingFinished.connect(self.output_dir_changed)
-        self.red_gamma_slider.valueChanged.connect(self.red_gamma_changed)
-        self.green_black_slider.valueChanged.connect(self.green_black_changed)
-        self.green_white_slider.valueChanged.connect(self.green_white_changed)
-        self.green_gamma_slider.valueChanged.connect(self.green_gamma_changed)
+        self.red_gamma_spinbox.valueChanged.connect(self.red_gamma_changed)
+        self.green_black_spinbox.valueChanged.connect(self.green_black_changed)
+        self.green_white_spinbox.valueChanged.connect(self.green_white_changed)
+        self.green_gamma_spinbox.valueChanged.connect(self.green_gamma_changed)
+        self.red_gamma_spinbox.editingFinished.connect(self.red_gamma_changed)
+        self.green_black_spinbox.editingFinished.connect(self.green_black_changed)
+        self.green_white_spinbox.editingFinished.connect(self.green_white_changed)
+        self.green_gamma_spinbox.editingFinished.connect(self.green_gamma_changed)
+
+        # Level preset signals
+        self.level_presets_dropdown.currentIndexChanged.connect(self.load_selected_preset)
+        self.button_save_preset.clicked.connect(self.save_current_preset)
+        self.button_delete_preset.clicked.connect(self.delete_selected_preset)
 
         # Profile management signals
         self.profile_dropdown.currentIndexChanged.connect(self.profile_changed)
@@ -718,7 +778,9 @@ class UniversalDDSPlugin(QObject):
         current_profile = self.profile_dropdown.currentText()
         config_profile = config_ini(prompt_texconv_path=False, profile_name=current_profile)
         self.config.suffix_format_map = config_profile.suffix_format_map
+        self.config.level_presets = config_profile.level_presets
         self.load_suffix_formats()
+        self.load_level_presets()
 
         # Connect the log_signal to the log appending method
         self.log_signal.connect(self.log.append)
@@ -734,12 +796,12 @@ class UniversalDDSPlugin(QObject):
         if not self.config.show_levels:
             self.levels_container.hide()
             self.button_toggle_levels.setText("Show Levels")
-            
+
         # Apply log visibility state
         if not self.config.show_log:
             self.log.hide()
             self.button_display_log.setText("Show Log")
-        
+
         # Apply wiki visibility state
         if self.config.show_wiki:
             # Load the wiki content and show it
@@ -765,7 +827,8 @@ class UniversalDDSPlugin(QObject):
         substance_painter.ui.add_dock_widget(self.window)
         self.log_signal.emit(f"TexConv Path: {self.config.texconv_path}")
         self.log_signal.emit(f"Current Profile: {current_profile}")
-        self.log_signal.emit(f"Output Directory: {self.config.output_dir if self.config.output_dir else 'Same as source file'}")
+        self.log_signal.emit(
+            f"Output Directory: {self.config.output_dir if self.config.output_dir else 'Same as source file'}")
 
         # Connect export event handler
         connections = {
@@ -864,31 +927,21 @@ class UniversalDDSPlugin(QObject):
         self.config = config_ini(prompt_texconv_path=False, profile_name=profile_name)
         # Update UI elements based on the new profile
         self.load_suffix_formats()
+        self.load_level_presets()  # Reload level presets for this profile
         self.checkbox_adjust_red.setChecked(self.config.adjust_red)
-        # Update min/max sliders and labels
-        self.red_min_slider.setValue(self.config.red_min)
-        self.red_min_value.setText(str(self.config.red_min))
-        self.red_max_slider.setValue(self.config.red_max)
-        self.red_max_value.setText(str(self.config.red_max))
-        # Update green levels UI (now sliders) + gamma labels
-        if hasattr(self, 'red_gamma_slider'):
-            self.red_gamma_slider.setValue(int(round(self.config.red_gamma * 100)))
-            self.red_gamma_value.setText(f"{self.config.red_gamma:.2f}")
-        if hasattr(self, 'green_black_slider'):
-            self.green_black_slider.setValue(self.config.green_black)
-            self.green_black_value.setText(str(self.config.green_black))
-        if hasattr(self, 'green_white_slider'):
-            self.green_white_slider.setValue(self.config.green_white)
-            self.green_white_value.setText(str(self.config.green_white))
-        if hasattr(self, 'green_gamma_slider'):
-            self.green_gamma_slider.setValue(int(round(self.config.green_gamma * 100)))
-            self.green_gamma_value.setText(f"{self.config.green_gamma:.2f}")
+        # Update min/max spinboxes
+        self.red_min_spinbox.setValue(self.config.red_min)
+        self.red_max_spinbox.setValue(self.config.red_max)
+        # Update gamma spinboxes
+        self.red_gamma_spinbox.setValue(self.config.red_gamma)
+        self.green_black_spinbox.setValue(self.config.green_black)
+        self.green_white_spinbox.setValue(self.config.green_white)
+        self.green_gamma_spinbox.setValue(self.config.green_gamma)
 
         # Ensure min < max
         if self.config.red_min >= self.config.red_max:
             self.config.red_min = self.config.red_max - 1
-            self.red_min_slider.setValue(self.config.red_min)
-            self.red_min_value.setText(str(self.config.red_min))
+            self.red_min_spinbox.setValue(self.config.red_min)
 
         self.log_signal.emit(f"Switched to profile: {profile_name}")
         self.updating_ui = False  # End UI update
@@ -1215,54 +1268,70 @@ class UniversalDDSPlugin(QObject):
         self.log_signal.emit(f"Fallout 4 Spec Adjustments enabled: {self.config.adjust_red}")
 
     # Add handler methods
-    def red_min_slider_change(self, value):
+    def red_min_changed(self, value=None):
+        # If called from editingFinished, get the current value
+        if value is None:
+            value = self.red_min_spinbox.value()
+            
         # Ensure min is always less than max
-        if value >= self.red_max_slider.value():
-            value = self.red_max_slider.value() - 1
-            self.red_min_slider.setValue(value)
+        if value >= self.red_max_spinbox.value():
+            value = self.red_max_spinbox.value() - 1
+            self.red_min_spinbox.setValue(value)
 
         self.config.red_min = value
-        self.red_min_value.setText(str(value))
         self.save_config()
 
-    def red_max_slider_change(self, value):
+    def red_max_changed(self, value=None):
+        # If called from editingFinished, get the current value
+        if value is None:
+            value = self.red_max_spinbox.value()
+            
         # Ensure max is always greater than min
-        if value <= self.red_min_slider.value():
-            value = self.red_min_slider.value() + 1
-            self.red_max_slider.setValue(value)
+        if value <= self.red_min_spinbox.value():
+            value = self.red_min_spinbox.value() + 1
+            self.red_max_spinbox.setValue(value)
 
         self.config.red_max = value
-        self.red_max_value.setText(str(value))
         self.save_config()
 
-    def red_gamma_changed(self, value):
-        # Slider 10-300 maps to 0.10-3.00
-        self.config.red_gamma = round(max(10, min(300, int(value))) / 100.0, 2)
-        self.red_gamma_value.setText(f"{self.config.red_gamma:.2f}")
+    def red_gamma_changed(self, value=None):
+        # If called from editingFinished, get the current value
+        if value is None:
+            value = self.red_gamma_spinbox.value()
+            
+        self.config.red_gamma = value
         self.save_config()
 
-    def green_black_changed(self, value):
+    def green_black_changed(self, value=None):
+        # If called from editingFinished, get the current value
+        if value is None:
+            value = self.green_black_spinbox.value()
+            
         # Ensure black is less than white
-        if value >= self.config.green_white:
-            value = max(0, self.config.green_white - 1)
-            self.green_black_slider.setValue(value)
+        if value >= self.green_white_spinbox.value():
+            value = max(0, self.green_white_spinbox.value() - 1)
+            self.green_black_spinbox.setValue(value)
         self.config.green_black = int(value)
-        self.green_black_value.setText(str(self.config.green_black))
         self.save_config()
 
-    def green_white_changed(self, value):
+    def green_white_changed(self, value=None):
+        # If called from editingFinished, get the current value
+        if value is None:
+            value = self.green_white_spinbox.value()
+            
         # Ensure white is greater than black
-        if value <= self.config.green_black:
-            value = min(255, self.config.green_black + 1)
-            self.green_white_slider.setValue(value)
+        if value <= self.green_black_spinbox.value():
+            value = min(255, self.green_black_spinbox.value() + 1)
+            self.green_white_spinbox.setValue(value)
         self.config.green_white = int(value)
-        self.green_white_value.setText(str(self.config.green_white))
         self.save_config()
 
-    def green_gamma_changed(self, value):
-        # Slider 10-300 maps to 0.10-3.00
-        self.config.green_gamma = round(max(10, min(300, int(value))) / 100.0, 2)
-        self.green_gamma_value.setText(f"{self.config.green_gamma:.2f}")
+    def green_gamma_changed(self, value=None):
+        # If called from editingFinished, get the current value
+        if value is None:
+            value = self.green_gamma_spinbox.value()
+            
+        self.config.green_gamma = value
         self.save_config()
 
     # Save the current plugin configuration to the ini file
@@ -1292,6 +1361,14 @@ class UniversalDDSPlugin(QObject):
         config['General']['ShowLevels'] = str(self.config.show_levels)
         config['General']['ShowLog'] = str(self.config.show_log)
         config['General']['ShowWiki'] = str(self.config.show_wiki)
+
+        # Save level presets
+        if 'LevelPresets' in config:
+            config.remove_section('LevelPresets')
+        config.add_section('LevelPresets')
+        for preset_name, preset_values in self.config.level_presets.items():
+            preset_str = f"{preset_values['red_min']},{preset_values['red_max']},{preset_values['red_gamma']},{preset_values['green_black']},{preset_values['green_white']},{preset_values['green_gamma']}"
+            config['LevelPresets'][preset_name] = preset_str
 
         # Save suffix formats for the current profile
         profile_name = self.profile_dropdown.currentText()
@@ -1330,6 +1407,104 @@ class UniversalDDSPlugin(QObject):
 
         self.updating_ui = False  # End UI update
 
+    # Level preset methods
+    def load_level_presets(self):
+        """Load level presets into the dropdown"""
+        self.level_presets_dropdown.clear()
+        self.level_presets_dropdown.addItem("Default")  # Default option
+        
+        for preset_name in self.config.level_presets.keys():
+            self.level_presets_dropdown.addItem(preset_name)
+
+    def save_current_preset(self):
+        """Save current level values as a new preset"""
+        preset_name, ok = QtWidgets.QInputDialog.getText(self.window, 'Save Preset', 'Enter preset name:')
+        if ok and preset_name:
+            preset_name = preset_name.strip()
+            if not preset_name:
+                QtWidgets.QMessageBox.warning(self.window, "Invalid Name", "Preset name cannot be empty.")
+                return
+            
+            # Check if preset already exists
+            if preset_name in self.config.level_presets:
+                reply = QtWidgets.QMessageBox.question(
+                    self.window,
+                    'Overwrite Preset',
+                    f"Preset '{preset_name}' already exists. Overwrite?",
+                    QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                    QtWidgets.QMessageBox.No
+                )
+                if reply == QtWidgets.QMessageBox.No:
+                    return
+            
+            # Save current values as preset
+            self.config.level_presets[preset_name] = {
+                'red_min': self.red_min_spinbox.value(),
+                'red_max': self.red_max_spinbox.value(),
+                'red_gamma': self.red_gamma_spinbox.value(),
+                'green_black': self.green_black_spinbox.value(),
+                'green_white': self.green_white_spinbox.value(),
+                'green_gamma': self.green_gamma_spinbox.value()
+            }
+            
+            self.save_config()
+            self.load_level_presets()
+            self.level_presets_dropdown.setCurrentText(preset_name)
+            self.log_signal.emit(f"Saved level preset: {preset_name}")
+
+    def delete_selected_preset(self):
+        """Delete the selected preset"""
+        current_preset = self.level_presets_dropdown.currentText()
+        if current_preset == "Default":
+            QtWidgets.QMessageBox.warning(self.window, "Cannot Delete", "Cannot delete the Default preset.")
+            return
+        
+        if current_preset in self.config.level_presets:
+            reply = QtWidgets.QMessageBox.question(
+                self.window,
+                'Delete Preset',
+                f"Are you sure you want to delete the preset '{current_preset}'?",
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.No
+            )
+            if reply == QtWidgets.QMessageBox.Yes:
+                del self.config.level_presets[current_preset]
+                self.save_config()
+                self.load_level_presets()
+                self.level_presets_dropdown.setCurrentIndex(0)  # Set to Default
+                self.log_signal.emit(f"Deleted level preset: {current_preset}")
+
+    def load_selected_preset(self, index):
+        """Load the selected preset values into the UI"""
+        preset_name = self.level_presets_dropdown.currentText()
+        if preset_name == "Default":
+            # Don't change values for Default
+            return
+        
+        if preset_name in self.config.level_presets:
+            preset_values = self.config.level_presets[preset_name]
+            self.updating_ui = True  # Prevent triggering save during update
+            
+            self.red_min_spinbox.setValue(preset_values['red_min'])
+            self.red_max_spinbox.setValue(preset_values['red_max'])
+            self.red_gamma_spinbox.setValue(preset_values['red_gamma'])
+            self.green_black_spinbox.setValue(preset_values['green_black'])
+            self.green_white_spinbox.setValue(preset_values['green_white'])
+            self.green_gamma_spinbox.setValue(preset_values['green_gamma'])
+            
+            self.updating_ui = False
+            
+            # Update config with new values
+            self.config.red_min = preset_values['red_min']
+            self.config.red_max = preset_values['red_max']
+            self.config.red_gamma = preset_values['red_gamma']
+            self.config.green_black = preset_values['green_black']
+            self.config.green_white = preset_values['green_white']
+            self.config.green_gamma = preset_values['green_gamma']
+            
+            self.save_config()
+            self.log_signal.emit(f"Loaded level preset: {preset_name}")
+
     # Cleanup function when the plugin is unloaded
     def cleanup(self):
         if self.is_cleaned_up:
@@ -1341,7 +1516,10 @@ class UniversalDDSPlugin(QObject):
             self.checkbox.stateChanged.disconnect(self.checkbox_export_change)
             self.checkbox_overwrite.stateChanged.disconnect(self.checkbox_overwrite_change)
             self.checkbox_adjust_red.stateChanged.disconnect(self.checkbox_adjust_red_change)
-            self.red_max_slider.valueChanged.disconnect(self.red_max_slider_change)
+            self.red_max_spinbox.valueChanged.disconnect(self.red_max_changed)
+            self.red_min_spinbox.valueChanged.disconnect(self.red_min_changed)
+            self.red_max_spinbox.editingFinished.disconnect(self.red_max_changed)
+            self.red_min_spinbox.editingFinished.disconnect(self.red_min_changed)
             self.button_texconv.clicked.disconnect(self.button_texconv_clicked)
             self.button_clear.clicked.disconnect(self.button_clear_clicked)
             self.button_display_log.clicked.disconnect(self.toggle_log_display)
@@ -1353,14 +1531,17 @@ class UniversalDDSPlugin(QObject):
             self.button_remove.clicked.disconnect(self.remove_last_suffix_format_row)
             self.button_browse_dir.clicked.disconnect(self.browse_output_directory)
             self.output_dir_edit.editingFinished.disconnect(self.output_dir_changed)
-            if hasattr(self, 'red_gamma_slider'):
-                self.red_gamma_slider.valueChanged.disconnect(self.red_gamma_changed)
-            if hasattr(self, 'green_black_slider'):
-                self.green_black_slider.valueChanged.disconnect(self.green_black_changed)
-            if hasattr(self, 'green_white_slider'):
-                self.green_white_slider.valueChanged.disconnect(self.green_white_changed)
-            if hasattr(self, 'green_gamma_slider'):
-                self.green_gamma_slider.valueChanged.disconnect(self.green_gamma_changed)
+            self.red_gamma_spinbox.valueChanged.disconnect(self.red_gamma_changed)
+            self.green_black_spinbox.valueChanged.disconnect(self.green_black_changed)
+            self.green_white_spinbox.valueChanged.disconnect(self.green_white_changed)
+            self.green_gamma_spinbox.valueChanged.disconnect(self.green_gamma_changed)
+            self.red_gamma_spinbox.editingFinished.disconnect(self.red_gamma_changed)
+            self.green_black_spinbox.editingFinished.disconnect(self.green_black_changed)
+            self.green_white_spinbox.editingFinished.disconnect(self.green_white_changed)
+            self.green_gamma_spinbox.editingFinished.disconnect(self.green_gamma_changed)
+            self.level_presets_dropdown.currentIndexChanged.disconnect(self.load_selected_preset)
+            self.button_save_preset.clicked.disconnect(self.save_current_preset)
+            self.button_delete_preset.clicked.disconnect(self.delete_selected_preset)
             self.profile_dropdown.currentIndexChanged.disconnect(self.profile_changed)
             self.button_add_profile.clicked.disconnect(self.add_profile)
             self.button_delete_profile.clicked.disconnect(self.delete_profile)
