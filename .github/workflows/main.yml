@@ -15,12 +15,12 @@ jobs:
       - name: Create zip file
         run: |
           mkdir -p release/plugins
-          cp your_python_file.py release/plugins/
+          cp Universal-DDS-Exporter.py release/plugins/
           cp -r modules release/
           cd release
-          zip -r myplugin.zip .
+          zip -r fallout4substanceplugin.zip .
 
       - name: Upload release asset
         uses: softprops/action-gh-release@v2
         with:
-          files: release/myplugin.zip
+          files: release/fallout4substanceplugin.zip
