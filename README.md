@@ -65,7 +65,8 @@ This will create a Universal-DDS-Exporter-PluginSettings.ini in the plugin folde
 
 First time running the plugin it will ask you what folder the Texconv.exe is located in via a UI pop-up. This will create a Universal-DDS-Exporter-PluginSettings.ini in the plugin folder with the settings saved.
 
-![plugin widget](https://staticdelivery.nexusmods.com/mods/2295/images/1044/1044-1736010967-599790474.png)
+<img width="578" height="445" alt="Screenshot 2025-09-05 082551" src="https://github.com/user-attachments/assets/cdad2c6c-62dc-4505-b656-46bf10192d8a" />
+
 Dockable widget with output terminal and basic settings
 
 # Dependencies:
